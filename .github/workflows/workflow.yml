@@ -9,12 +9,13 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 21
-      - name: Install Jenkins plugins
+      - name: Install Jenkins and plugins
         run: |
           curl -L -o jenkins.war http://mirrors.jenkins.io/war-stable/latest/jenkins.war
           java -jar jenkins.war --httpPort=8080 &
           sleep 30
-          jenkins-plugin-cli --plugins < plugins.txt
+          curl -L -o jenkins-plugin-cli.jar https://repo.jenkins-ci.org/releases/org/jenkins-ci/main/jenkins-cli/2.319.1/jenkins-cli-2.319.1.jar
+          java -jar jenkins-plugin-cli.jar -s http://localhost:8080/ -webSocket install-plugin < plugins.txt
       - name: jenkinsfile-runner-prepackaged
         uses: jenkinsci/jenkinsfile-runner-github-actions/jenkinsfile-runner-prepackaged@master
         env:
