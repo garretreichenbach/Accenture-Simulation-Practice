@@ -34,7 +34,7 @@ project(":client-app") {
 }
 
 // Here we have a task that depends on the client UI build and then copies the build output into src/main/webapp so that Java app will serve it
-task copyClientApp(type: Copy) {
+tasks.register('copyClientApp', Copy) {
     dependsOn ":client-app:yarn_build"
     from project(":client-app").buildDir
     into "src/main/webapp"

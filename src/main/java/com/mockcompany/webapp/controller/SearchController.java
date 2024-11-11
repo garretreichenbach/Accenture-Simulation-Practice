@@ -44,18 +44,16 @@ import java.util.List;
 @RestController
 public class SearchController {
 
-	/**
-	 * This is a instance field. It is provided by the spring framework through the constructor because of the
-	 *
-	 * @Autowired annotation. Autowire tells the spring framework to automatically find and use an instance of
-	 * the declared class when creating this class.
-	 */
-	private final ProductItemRepository productItemRepository;
 	private final SearchService SearchService;
 
 	@Autowired
-	public SearchController(ProductItemRepository productItemRepository, SearchService SearchService) {
-		this.productItemRepository = productItemRepository;
+	public SearchController(SearchService SearchService) {
+		/**
+		 * This is a instance field. It is provided by the spring framework through the constructor because of the
+		 *
+		 * @Autowired annotation. Autowire tells the spring framework to automatically find and use an instance of
+		 * the declared class when creating this class.
+		 */
 		this.SearchService = SearchService;
 	}
 
@@ -70,6 +68,6 @@ public class SearchController {
 	 */
 	@GetMapping("/api/products/search")
 	public Collection<ProductItem> search(@RequestParam("query") String query) {
-		return new ArrayList<>(SearchService.searchProducts((List<ProductItem>) productItemRepository.findAll(), query));
+		return new ArrayList<>(SearchService.search(query));
 	}
 }

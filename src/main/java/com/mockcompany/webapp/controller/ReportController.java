@@ -22,9 +22,8 @@ import java.util.regex.Pattern;
 @RestController
 public class ReportController {
 
-	/**
-	 * The people that wrote this code didn't know about JPA Spring Repository interfaces!
-	 */
+	private static final String[] importantTerms = {"Cool", "Amazing", "Perfect", "Kids"};
+
 	private final EntityManager entityManager;
 	private final SearchService searchService;
 
@@ -36,37 +35,13 @@ public class ReportController {
 
 	@GetMapping("/api/products/report")
 	public SearchReportResponse runReport() {
+		Number count = (Number) entityManager.createQuery("SELECT count(item) FROM ProductItem item").getSingleResult();
 		Map<String, Integer> hits = new HashMap<>();
+		for(String term : importantTerms) hits.put(term, searchService.search(term).size());
+
 		SearchReportResponse response = new SearchReportResponse();
+		response.setProductCount(count.intValue());
 		response.setSearchTermHits(hits);
-
-		int count = entityManager.createQuery("SELECT item FROM ProductItem item").getResultList().size();
-
-		List<Number> matchingIds = new ArrayList<>();
-		matchingIds.addAll(entityManager.createQuery("SELECT item.id from ProductItem item where item.name like '%cool%'").getResultList());
-		matchingIds.addAll(entityManager.createQuery("SELECT item.id from ProductItem item where item.description like '%cool%'").getResultList());
-		matchingIds.addAll(entityManager.createQuery("SELECT item.id from ProductItem item where item.name like '%Cool%'").getResultList());
-		matchingIds.addAll(entityManager.createQuery("SELECT item.id from ProductItem item where item.description like '%cool%'").getResultList());
-		List<Number> counted = new ArrayList<>();
-		for(Number id : matchingIds) {
-			if(!counted.contains(id)) counted.add(id);
-		}
-
-		response.getSearchTermHits().put("Cool", counted.size());
-		response.setProductCount(count);
-
-		List<ProductItem> allItems = entityManager.createQuery("SELECT item FROM ProductItem item").getResultList();
-		int[] kidCount = {0};
-		int[] perfectCount = {0};
-
-		searchService.searchProducts(allItems, "perfect").forEach(product -> {
-			if(product.getName().toLowerCase().contains("kid") || product.getDescription().toLowerCase().contains("kid")) kidCount[0]++;
-			if(product.getName().toLowerCase().contains("perfect") || product.getDescription().toLowerCase().contains("perfect")) perfectCount[0]++;
-		});
-
-		response.getSearchTermHits().put("Kids", kidCount[0]);
-		response.getSearchTermHits().put("Amazing", entityManager.createQuery("SELECT item FROM ProductItem item where lower(concat(item.name, ' - ', item.description)) like '%amazing%'").getResultList().size());
-		hits.put("Perfect", perfectCount[0]);
 		return response;
 	}
 }
