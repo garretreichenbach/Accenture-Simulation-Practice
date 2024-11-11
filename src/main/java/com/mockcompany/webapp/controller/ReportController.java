@@ -2,6 +2,7 @@ package com.mockcompany.webapp.controller;
 
 import com.mockcompany.webapp.api.SearchReportResponse;
 import com.mockcompany.webapp.model.ProductItem;
+import com.mockcompany.webapp.service.SearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,10 +26,12 @@ public class ReportController {
 	 * The people that wrote this code didn't know about JPA Spring Repository interfaces!
 	 */
 	private final EntityManager entityManager;
+	private final SearchService searchService;
 
 	@Autowired
-	public ReportController(EntityManager entityManager) {
+	public ReportController(EntityManager entityManager, SearchService searchService) {
 		this.entityManager = entityManager;
+		this.searchService = searchService;
 	}
 
 	@GetMapping("/api/products/report")
@@ -37,50 +40,33 @@ public class ReportController {
 		SearchReportResponse response = new SearchReportResponse();
 		response.setSearchTermHits(hits);
 
-		int count = this.entityManager.createQuery("SELECT item FROM ProductItem item").getResultList().size();
+		int count = entityManager.createQuery("SELECT item FROM ProductItem item").getResultList().size();
 
 		List<Number> matchingIds = new ArrayList<>();
-		matchingIds.addAll(
-				this.entityManager.createQuery("SELECT item.id from ProductItem item where item.name like '%cool%'").getResultList()
-		);
-		matchingIds.addAll(
-				this.entityManager.createQuery("SELECT item.id from ProductItem item where item.description like '%cool%'").getResultList()
-		);
-		matchingIds.addAll(
-				this.entityManager.createQuery("SELECT item.id from ProductItem item where item.name like '%Cool%'").getResultList()
-		);
-		matchingIds.addAll(
-				this.entityManager.createQuery("SELECT item.id from ProductItem item where item.description like '%cool%'").getResultList()
-		);
+		matchingIds.addAll(entityManager.createQuery("SELECT item.id from ProductItem item where item.name like '%cool%'").getResultList());
+		matchingIds.addAll(entityManager.createQuery("SELECT item.id from ProductItem item where item.description like '%cool%'").getResultList());
+		matchingIds.addAll(entityManager.createQuery("SELECT item.id from ProductItem item where item.name like '%Cool%'").getResultList());
+		matchingIds.addAll(entityManager.createQuery("SELECT item.id from ProductItem item where item.description like '%cool%'").getResultList());
 		List<Number> counted = new ArrayList<>();
 		for(Number id : matchingIds) {
-			if(!counted.contains(id)) {
-				counted.add(id);
-			}
+			if(!counted.contains(id)) counted.add(id);
 		}
 
 		response.getSearchTermHits().put("Cool", counted.size());
-
 		response.setProductCount(count);
 
 		List<ProductItem> allItems = entityManager.createQuery("SELECT item FROM ProductItem item").getResultList();
-		int kidCount = 0;
-		int perfectCount = 0;
-		Pattern kidPattern = Pattern.compile("(.*)[kK][iI][dD][sS](.*)");
-		for(ProductItem item : allItems) {
-			if(kidPattern.matcher(item.getName()).matches() || kidPattern.matcher(item.getDescription()).matches()) {
-				kidCount += 1;
-			}
-			if(item.getName().toLowerCase().contains("perfect") || item.getDescription().toLowerCase().contains("perfect")) {
-				perfectCount += 1;
-			}
-		}
-		response.getSearchTermHits().put("Kids", kidCount);
+		int[] kidCount = {0};
+		int[] perfectCount = {0};
 
+		searchService.searchProducts(allItems, "perfect").forEach(product -> {
+			if(product.getName().toLowerCase().contains("kid") || product.getDescription().toLowerCase().contains("kid")) kidCount[0]++;
+			if(product.getName().toLowerCase().contains("perfect") || product.getDescription().toLowerCase().contains("perfect")) perfectCount[0]++;
+		});
+
+		response.getSearchTermHits().put("Kids", kidCount[0]);
 		response.getSearchTermHits().put("Amazing", entityManager.createQuery("SELECT item FROM ProductItem item where lower(concat(item.name, ' - ', item.description)) like '%amazing%'").getResultList().size());
-
-		hits.put("Perfect", perfectCount);
-
+		hits.put("Perfect", perfectCount[0]);
 		return response;
 	}
 }
