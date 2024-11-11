@@ -14,4 +14,10 @@ pipeline {
 			}
 		}
 	}
+	post {
+		always {
+            junit '**/build/test-results/test/*.xml'
+            archiveArtifacts artifacts: '**/build/libs/*.jar', allowEmptyArchive: true
+        }
+    }
 }
