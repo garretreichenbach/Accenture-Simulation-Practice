@@ -1,3 +1,0 @@
-workflow-aggregator
-git
-github
