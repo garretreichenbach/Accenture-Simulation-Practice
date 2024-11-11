@@ -1,10 +1,20 @@
 on: push
 name: Jenkins master
 jobs:
-  jenkinsfile-runner-prepackaged:
+  jenkins-runner:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+      - name: Set up JDK 21
+        uses: actions/setup-java@v1
+        with:
+          java-version: 21
+      - name: Install Jenkins plugins
+        run: |
+          curl -L -o jenkins.war http://mirrors.jenkins.io/war-stable/latest/jenkins.war
+          java -jar jenkins.war --httpPort=8080 &
+          sleep 30
+          jenkins-plugin-cli --plugins < plugins.txt
       - name: jenkinsfile-runner-prepackaged
         uses: jenkinsci/jenkinsfile-runner-github-actions/jenkinsfile-runner-prepackaged@master
         env:
